@@ -22,7 +22,7 @@
         <select name="yearSelect" id="yearSelect" onchange="changeFilter('year', event.target.value);"></select>
         <select name="productSelect" id="productSelect" onchange="changeFilter('product', event.target.value);"></select>
         <select name="regionSelect" id="regionSelect" onchange="changeFilter('region', event.target.value);"></select>
-        <button onclick="clearFilters();">Clear</button>
+        <button id="clearButton" onclick="clearFilters();" disabled>Clear</button>
     </div>
     <div id="container">
         <div class="line">
@@ -45,6 +45,7 @@
         var yearSelect = document.getElementById("yearSelect");
         var productSelect = document.getElementById("productSelect");
         var regionSelect = document.getElementById("regionSelect");
+        var clearButton = document.getElementById("clearButton");
 
         // filters
         var filters = {
@@ -66,6 +67,7 @@
             yearSelect.value = filters.year == undefined ? 'All' : filters.year;
             productSelect.value = filters.product == undefined ? 'All' : filters.product;
             regionSelect.value = filters.region == undefined ? 'All' : filters.region;
+            clearButton.disabled = filters.year == undefined && filters.region == undefined && filters.product == undefined;
         }
         
         // reset filters

@@ -16,7 +16,7 @@ Clone the repository from github.com to your working directory:
 $ git clone git@github.com:anychart-integrations/asp-net-core-mvc-mysql-dashboard.git
 ```
 
-Open cmd console in `asp-net-core-mvc-mysql-dashboard` folder and set up MySQL database, use -u -p flags to provide username and password:
+Open cmd console in `asp-net-core-mvc-mysql-dashboard` folder and set up MySQL database, use `-u -p` flags to provide username and password:
 ```
 $  "[YOUR_PATH_TO_MYSQL]\bin\mysql.exe" -u[USER_NAME] -p < database_backup.sql
 e.g:  
