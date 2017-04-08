@@ -1,0 +1,273 @@
+@model IEnumerable<asp_net_core_mvc_mysql_dashboard.Models.Sale>
+
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>@ViewData["Title"]</title>
+    <script src="https://cdn.anychart.com/js/latest/anychart-bundle.min.js"></script>
+    <script src="http://cdn.anychart.com/samples-data/maps-choropleth/world-women-suffrage-map/data.js"></script>
+    <script src="http://cdn.anychart.com/geodata/1.2.0/custom/world/world.js"></script>
+    <script src="https://cdn.anychart.com/geodata/1.2.0/countries/united_states_of_america/united_states_of_america.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.3.15/proj4.js"></script>
+    <link rel="stylesheet" href="https://cdn.anychart.com/css/latest/anychart-ui.min.css" />
+    <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+    <div class="header">
+        <select name="yearSelect" id="yearSelect" onchange="changeFilter('year', event.target.value);"></select>
+        <select name="productSelect" id="productSelect" onchange="changeFilter('product', event.target.value);"></select>
+        <select name="regionSelect" id="regionSelect" onchange="changeFilter('region', event.target.value);"></select>
+        <button onclick="clearFilters();">Clear</button>
+    </div>
+    <div id="container">
+        <div class="line">
+             <div id="container1"></div>
+             <div id="container2"></div>
+        </div>   
+        <div id="container3"></div>
+    </div>
+    <script>
+        // get data from server
+        var data = @Html.Raw(ViewData["ChartData"]);
+        // set year from date for each item
+        data = data.map(function(item){
+            item.year = (new Date(item.date)).getFullYear();
+            return item;
+        });
+
+        // declare selects
+        var donutChart, columnChart, mapChart;
+        var yearSelect = document.getElementById("yearSelect");
+        var productSelect = document.getElementById("productSelect");
+        var regionSelect = document.getElementById("regionSelect");
+
+        // filters
+        var filters = {
+            year: undefined,
+            product: undefined,
+            region: undefined
+        };
+
+        // main change filter event handler
+        function changeFilter(type, value){
+            console.log("ChangeFilter:" + type + " " + value);
+            if (type == 'year' && value != 'All'){
+                value = parseInt(value);
+            }
+            filters[type] = value != 'All'? value : undefined;
+            donutChart.data(getDataByProduct(data, filters.region, filters.year));
+            columnChart.data(getDataByYear(data, filters.region, filters.product));
+            mapChart.choropleth(getDataByRegion(data, filters.year, filters.product));
+            yearSelect.value = filters.year == undefined ? 'All' : filters.year;
+            productSelect.value = filters.product == undefined ? 'All' : filters.product;
+            regionSelect.value = filters.region == undefined ? 'All' : filters.region;
+        }
+        
+        // reset filters
+        function clearFilters(){
+            filters.year = undefined;
+            filters.region = undefined;
+            changeFilter('product', 'All');
+        }
+
+        // get keys for selects
+        function getKeys(data, key){
+            var grouped = data.reduce(function(result, item) {
+                result[item[key]] = true;
+                return result;
+            }, {});
+            return ["All"].concat(Object.keys(grouped));
+        }
+
+        // calculate revenue add return data in appropriate format for charts
+        function getRevenue(data, key) {
+            var grouped = data.reduce(function(result, item) {
+                result[item[key]] = result[item[key]] || 0;
+                result[item[key]] += item.count * item.price;
+                return result;
+            }, {});
+            return Object.keys(grouped).map(function(k) {
+                return [k, grouped[k]];
+            });
+        };
+
+        // transform data to appropriate format for map
+        function getMapRevenue(data, key){
+            data = getRevenue(data, key);
+            return data.map(function(item){
+                return {id: item[0], value: item[1]};
+            });
+        }
+
+        // calculate data for column chart
+        function getDataByYear(data, opt_region, opt_product) {
+            data = data.filter(function(item){
+                return (typeof opt_region === 'undefined' || item.region == opt_region) &&
+                       (typeof opt_product === 'undefined' || item.product == opt_product);
+            });
+            return getRevenue(data, 'year');
+        }
+
+        // calculate data for map
+        function getDataByRegion(data, opt_year, opt_product) {
+            data = data.filter(function(item){
+                return (typeof opt_year === 'undefined' || item.year == opt_year) &&
+                       (typeof opt_product === 'undefined' || item.product == opt_product);
+            });
+            return getMapRevenue(data, 'region');
+        }
+
+        // calculate data for donut chart
+        function getDataByProduct(data, opt_region, opt_year) {
+            data = data.filter(function(item){
+                return (typeof opt_region === 'undefined' || item.region == opt_region) &&
+                       (typeof opt_year === 'undefined' || item.year == opt_year);
+            });
+            return getRevenue(data, 'product');
+        }
+
+        function setDonutChart(){
+            // create pie chart with passed data
+            var chart = anychart.pie(getDataByProduct(data));
+
+            // set container id for the chart
+            chart.container('container2');
+
+            // set chart title text settings
+            chart.title('Revenue by product');
+
+            //set chart radius
+            chart.radius('43%');
+
+            // create empty area in pie chart
+            chart.innerRadius('30%');
+
+            // initiate chart drawing
+            chart.draw();
+
+            return chart;
+        }
+
+        function setColumnChart(){
+            // create column chart
+            var chart = anychart.column();
+
+            // turn on chart animation
+            chart.animation(true);
+
+            // set chart title text settings
+            chart.title('Revenue by year');
+
+            var series = chart.column(getDataByYear(data));
+
+            // set series tooltip settings
+            series.tooltip().titleFormatter(function () {
+                return this.x
+            });
+
+            series.tooltip().textFormatter(function () {
+                return '$' + parseInt(this.value).toLocaleString()
+            });
+            series.tooltip().position('top').anchor('bottom').offsetX(0).offsetY(5);
+
+            // set scale minimum
+            chart.yScale().minimum(0);
+
+            // set yAxis labels formatter
+            chart.yAxis().labels().textFormatter("${%Value}");
+
+            // tooltips position and interactivity settings
+            chart.tooltip().positionMode('point');
+            chart.interactivity().hoverMode('byX');
+
+            // axes titles
+            chart.xAxis().title('Product');
+            chart.yAxis().title('Revenue');
+
+            // set container id for the chart
+            chart.container('container1');
+
+            // initiate chart drawing
+            chart.draw();
+            return chart;
+        }
+
+        function setMap(){
+             // create map
+            var map = anychart.map();
+
+            map.title("Revenue by region");
+
+            // create data set
+            var dataSet = anychart.data.set(getDataByRegion(data));
+
+            // create choropleth series
+            series = map.choropleth(dataSet);
+
+            // set geoIdField to 'id', this field contains in geo data meta properties
+            series.geoIdField('id');
+
+            // set map color settings
+            series.colorScale(anychart.scales.linearColor('#deebf7', '#3182bd'));
+            series.hoverFill('#addd8e');
+
+            // disable series labels
+            series.labels(false);
+
+            // set geo data, you can find this map in our geo maps collection
+            // http://cdn.anychart.com/#maps-collection
+            map.geoData(anychart.maps['united_states_of_america']);
+
+            //set map container id (div)
+            map.container('container3');
+
+            //initiate map drawing
+            map.draw();
+
+            return map;
+        }
+
+        // creating select from data array
+        function createSelect(select, array){
+            for (var i = 0; i < array.length; i++) {
+                var option = document.createElement("option");
+                option.value = array[i];
+                option.text = array[i];
+                select.appendChild(option);
+            }
+        }
+
+        // initialize charts, create selects, add event listeners to charts
+        function init(){
+            donutChart = setDonutChart();
+            columnChart = setColumnChart();
+            mapChart = setMap();
+
+            createSelect(yearSelect, getKeys(data, 'year'));
+            createSelect(productSelect, getKeys(data, 'product'));
+            createSelect(regionSelect, getKeys(data, 'region'));
+
+            columnChart.listen("pointsSelect", function(e){
+                changeFilter('year', e.point.get("x"));
+            });
+            donutChart.listen("pointsSelect", function(e){
+                changeFilter('product', e.point.get("x"));
+            });
+            mapChart.listen("pointsSelect", function(e){
+                changeFilter('region', e.point.get("id"));
+            });
+        }
+
+        // init then anychart library is ready
+        anychart.onDocumentReady(function () {
+            init();
+        });
+
+    </script>
+</body>
+</html>
