@@ -1,7 +1,7 @@
 [<img src="https://cdn.anychart.com/images/logo-transparent-segoe.png?2" width="234px" alt="AnyChart - Robust JavaScript/HTML5 Chart library for any project">](https://anychart.com)
 # ASP.NET Core MVC C# basic dashboard template
 
-This example shows how to use Anychart library with the C# programming language using ASP.NET Core MVC and MySQL database.
+This example shows how to use Anychart library with the C# programming language using ASP.NET Core 2.0 MVC and MySQL database.
 
 ## Running
 This example uses .NET Core 1.0.1 and MySQL 5.6.
