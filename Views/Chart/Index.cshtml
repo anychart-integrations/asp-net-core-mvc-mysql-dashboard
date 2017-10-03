@@ -9,12 +9,16 @@
 <head>
     <meta name="viewport" content="width=device-width" />
     <title>@ViewData["Title"]</title>
-    <script src="https://cdn.anychart.com/js/latest/anychart-bundle.min.js"></script>
+    <script src="https://cdn.anychart.com/releases/8.0.0/js/anychart-base.min.js"></script>
+	<script src="https://cdn.anychart.com/releases/8.0.0/js/anychart-map.min.js"></script>
+    <script src="https://cdn.anychart.com/releases/8.0.0/js/anychart-exports.min.js"></script>
+    <script src="https://cdn.anychart.com/releases/8.0.0/js/anychart-vml.min.js"></script>
     <script src="http://cdn.anychart.com/samples-data/maps-choropleth/world-women-suffrage-map/data.js"></script>
     <script src="http://cdn.anychart.com/geodata/1.2.0/custom/world/world.js"></script>
     <script src="https://cdn.anychart.com/geodata/1.2.0/countries/united_states_of_america/united_states_of_america.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.3.15/proj4.js"></script>
-    <link rel="stylesheet" href="https://cdn.anychart.com/css/latest/anychart-ui.min.css" />
+    <link rel="stylesheet" href="https://cdn.anychart.com/releases/8.0.0/css/anychart-ui.min.css" />
+    <link rel="stylesheet" href="https://cdn.anychart.com/releases/8.0.0/fonts/css/anychart.min.css"/>
     <link rel="stylesheet" href="/css/style.css" />
 </head>
 <body>
@@ -28,7 +32,7 @@
         <div class="line">
              <div id="container1"></div>
              <div id="container2"></div>
-        </div>   
+        </div>
         <div id="container3"></div>
     </div>
     <script>
@@ -69,7 +73,7 @@
             regionSelect.value = filters.region == undefined ? 'All' : filters.region;
             clearButton.disabled = filters.year == undefined && filters.region == undefined && filters.product == undefined;
         }
-        
+
         // reset filters
         function clearFilters(){
             filters.year = undefined;
@@ -168,24 +172,24 @@
             var series = chart.column(getDataByYear(data));
 
             // set series tooltip settings
-            series.tooltip().titleFormatter(function () {
+            series.tooltip().titleFormat(function () {
                 return this.x
             });
 
-            series.tooltip().textFormatter(function () {
+            series.tooltip().format(function () {
                 return '$' + parseInt(this.value).toLocaleString()
             });
-            series.tooltip().position('top').anchor('bottom').offsetX(0).offsetY(5);
+            series.tooltip().position('center-top').anchor('center-bottom').offsetX(0).offsetY(5);
 
             // set scale minimum
             chart.yScale().minimum(0);
 
             // set yAxis labels formatter
-            chart.yAxis().labels().textFormatter("${%Value}");
+            chart.yAxis().labels().format("${%Value}");
 
             // tooltips position and interactivity settings
             chart.tooltip().positionMode('point');
-            chart.interactivity().hoverMode('byX');
+            chart.interactivity().hoverMode('by-x');
 
             // axes titles
             chart.xAxis().title('Product');
@@ -216,7 +220,7 @@
 
             // set map color settings
             series.colorScale(anychart.scales.linearColor('#deebf7', '#3182bd'));
-            series.hoverFill('#addd8e');
+            series.hovered().fill('#addd8e');
 
             // disable series labels
             series.labels(false);
